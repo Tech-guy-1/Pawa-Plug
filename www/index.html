@@ -1,0 +1,200 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Pawa Plug</title>
+<style>
+:root{--g:#16a34a;--bg:#0f172a;--c:#1e293b;--t:#f1f5f9;--m:#94a3b8;--r:#ef4444;--y:#f59e0b}
+*{box-sizing:border-box}body{margin:0;font:16px system-ui,sans-serif;background:var(--bg);color:var(--t);padding-top:env(safe-area-inset-top)}
+.s{display:none;padding:18px;max-width:520px;margin:auto}.s.on{display:block}
+h1,h2{margin:.2em 0}.card{background:var(--c);border-radius:14px;padding:14px;margin:10px 0}small,label{color:var(--m);font-size:13px}
+input,select{width:100%;padding:12px;margin:6px 0 12px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:var(--t);font-size:16px}
+button{width:100%;padding:14px;border:0;border-radius:12px;background:var(--g);color:#fff;font-size:16px;font-weight:600;margin:6px 0}
+button.alt{background:#334155}button.red{background:var(--r)}button:disabled{opacity:.4}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.plan{padding:12px;border:2px solid #334155;border-radius:12px;text-align:center}.plan.sel{border-color:var(--g);background:#052e16}
+.tc{max-height:190px;overflow:auto;font-size:13px;color:var(--m);background:#0b1220;padding:10px;border-radius:10px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.chk input{width:22px;margin:2px 0}
+#banners{position:fixed;top:env(safe-area-inset-top);left:0;right:0;z-index:9;padding:8px}
+.bn{background:var(--y);color:#000;padding:12px;border-radius:12px;margin-bottom:6px;font-weight:600;display:flex;justify-content:space-between;gap:8px}.bn.od{background:var(--r);color:#fff}
+.big{font-size:28px;font-weight:700;margin:6px 0}#reader{width:100%;border-radius:12px;overflow:hidden}
+.code{display:inline-block;text-align:center;padding:8px;background:#fff;color:#000;margin:5px;border-radius:8px;font:12px monospace}
+.price{font-size:30px;font-weight:700;color:var(--g)}
+@media print{.np{display:none!important}body{background:#fff}}
+</style></head><body>
+<div id="banners"></div>
+
+<section class="s on" id="welcome"><h1>⚡ Pawa Plug</h1><p>Power bank rentals, managed.</p>
+<button onclick="agent?gate():show('signup')">Get started</button>
+<button class="alt" onclick="show('login')">I already have an account</button></section>
+
+<section class="s" id="signup"><h2>Create agent account</h2>
+<label>Full name</label><input id="su_name"><label>Phone number</label><input id="su_phone" type="tel">
+<label>Password (min 6 characters)</label><input id="su_pw" type="password"><label>Confirm password</label><input id="su_pw2" type="password">
+<label>University</label><input id="su_uni" placeholder="Type your university">
+<label>Gender</label><select id="su_gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+<label>Number of power banks assigned</label><input id="su_n" type="number" min="1" max="100">
+<button onclick="signup()">Create account &amp; generate codes</button><button class="alt" onclick="show('welcome')">Back</button></section>
+
+<section class="s" id="login"><h2>Log in</h2>
+<label>Phone number</label><input id="li_phone" type="tel"><label>Password</label><input id="li_pw" type="password">
+<button onclick="login()">Log in</button><button class="alt" onclick="show('welcome')">Back</button></section>
+
+<section class="s" id="pending"><h2>⏳ Waiting for verification</h2>
+<div class="card">Your account has been created but is locked. Please wait for an admin to verify your account. Once verified, you can log in and get your power bank QR codes.</div>
+<button onclick="gate()">Check again</button><button class="alt" onclick="logout()">Log out</button></section>
+
+<section class="s" id="stickers"><h2 class="np">Your power bank stickers</h2>
+<p class="np"><small>Every code starts with your agent letters. Print and stick one on each power bank, then activate them by scanning.</small></p>
+<div id="stk"></div>
+<button class="np" onclick="window.print()">Print stickers</button>
+<small class="np">If print doesn't open, screenshot this sheet and print it from any phone or print shop.</small>
+<button class="np" onclick="activateMode()">Next: scan to activate</button><button class="alt np" onclick="openHome()">Skip to home</button></section>
+
+<section class="s" id="home"><h2 id="hello"></h2><small id="stats"></small>
+<button onclick="rentStart()">➕ New rental (scan QR)</button>
+<button onclick="openRentals()">⏱ Active rentals</button>
+<button class="alt" onclick="activateMode()">✅ Activate power banks</button>
+<button class="alt" onclick="show('addbanks')">➕ Add power banks</button>
+<button class="alt" onclick="openStickers()">🏷 My stickers</button>
+<button class="alt" onclick="logout()">Log out</button></section>
+
+<section class="s" id="addbanks"><h2>Add power banks</h2>
+<p><small>New codes continue from your last one with the same agent letters. Print their stickers, then scan to activate.</small></p>
+<label>How many power banks?</label><input id="ab_n" type="number" min="1" max="100">
+<button onclick="addBanks()">Generate codes</button><button class="alt" onclick="openHome()">Back</button></section>
+
+<section class="s" id="scan"><h2 id="scantitle">Scan QR</h2><div id="reader"></div><p id="scanmsg"></p>
+<button class="alt" onclick="stopScan().then(openHome)">Done / Cancel</button></section>
+
+<section class="s" id="rent"><h2>New rental</h2><small>Power bank: <b id="rf_code"></b></small>
+<label>Customer name</label><input id="f_name"><label>Phone number</label><input id="f_phone" type="tel"><label>Residence</label><input id="f_res">
+<label>Duration</label>
+<div class="plans">
+<div class="plan" data-k="1h" onclick="selPlan('1h')"><b>1 hour</b><br>MK 1,000</div>
+<div class="plan" data-k="4h" onclick="selPlan('4h')"><b>4 hours</b><br>MK 2,000</div>
+<div class="plan" data-k="6h" onclick="selPlan('6h')"><b>6 hours</b><br>MK 3,500</div>
+<div class="plan" data-k="c" onclick="selPlan('c')"><b>Custom</b><br>7+ hours</div></div>
+<div id="cust" style="display:none"><label>Hours (7 or more)</label><input id="c_h" type="number" min="7" oninput="updPrice()"><label>Price (MK, enter manually)</label><input id="c_p" type="number" min="1" oninput="updPrice()"></div>
+<div>Price: <span class="price" id="price">—</span></div>
+<label>Payment method</label><select id="f_pay"><option value="">Select</option><option>Cash</option><option>National Bank</option><option>NBS Bank</option><option>Standard Bank</option><option>Airtel Money</option><option>TNM Mpamba</option></select>
+<label>Terms &amp; Conditions</label><div class="tc" id="tctext"></div>
+<div class="chk"><input type="checkbox" id="tc" onchange="updPrice()"><span>I have read and accept the Terms &amp; Conditions.</span></div>
+<button id="sub" onclick="submitRental()" disabled>Confirm &amp; start countdown</button><button class="alt" onclick="openHome()">Cancel</button></section>
+
+<section class="s" id="rentals"><h2>Active rentals</h2><div id="rlist"></div><button class="alt" onclick="openHome()">Back</button></section>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'MK '+Number(n).toLocaleString();
+const sb=supabase.createClient(CFG.URL,CFG.KEY);
+const PLANS={'1h':{h:1,p:1000,f:200},'4h':{h:4,p:2000,f:500},'6h':{h:6,p:3500,f:800}};
+const CUSTOM_FEE=1000,LOSS_FEE=65000,HOUR=3600000;
+let agent=JSON.parse(localStorage.getItem('pp_agent')||'null'),cur=null,plan=null,rentals=[],scanner=null;
+const show=id=>{document.querySelectorAll('.s').forEach(e=>e.classList.toggle('on',e.id===id));scrollTo(0,0)};
+const toast=m=>alert(m);
+
+/* ---------- account ---------- */
+let ok=false;
+const keep=a=>{agent={id:a.id,name:a.name,phone:a.phone,prefix:a.prefix};localStorage.setItem('pp_agent',JSON.stringify(agent))};
+async function login(){const phone=$('li_phone').value.trim(),pw=$('li_pw').value;
+ if(!phone||!pw)return toast('Enter your phone number and password.');
+ const {data,error}=await sb.rpc('login_agent',{p_phone:phone,p_password:pw});
+ if(error)return toast(error.message);$('li_pw').value='';keep(data);gate()}
+function logout(){localStorage.removeItem('pp_agent');agent=null;ok=false;rentals=[];$('banners').innerHTML='';show('welcome')}
+async function gate(){const {data,error}=await sb.rpc('agent_status',{p_id:agent.id});
+ if(error)return toast(error.message);ok=!!data;
+ if(!ok){$('banners').innerHTML='';return show('pending')}
+ const k='pp_seen_'+agent.id;if(!localStorage.getItem(k)){localStorage.setItem(k,1);return openStickers()}openHome()}
+async function signup(){
+ const v=id=>$(id).value.trim(),name=v('su_name'),phone=v('su_phone'),uni=v('su_uni'),g=v('su_gender'),n=parseInt(v('su_n')),pw=$('su_pw').value;
+ if(!name||!phone||!uni||!g||!(n>=1&&n<=100))return toast('Fill all fields (1 to 100 power banks).');
+ if(pw.length<6)return toast('Password must be at least 6 characters.');
+ if(pw!==$('su_pw2').value)return toast('Passwords do not match.');
+ const {data,error}=await sb.rpc('register_agent',{p_name:name,p_phone:phone,p_university:uni,p_gender:g,p_count:n,p_password:pw});
+ if(error)return toast(error.message);
+ $('su_pw').value=$('su_pw2').value='';keep({id:data.id,name,phone,prefix:data.prefix});show('pending')}
+async function openHome(){show('home');$('hello').textContent=`${agent.name} · ${agent.prefix}`;
+ const {data}=await sb.from('power_banks').select('status').eq('agent_id',agent.id);const c=s=>(data||[]).filter(b=>b.status===s).length;
+ $('stats').textContent=`Inactive ${c('inactive')} · Available ${c('available')} · Rented ${c('rented')} · Lost ${c('lost')}`;loadRentals()}
+async function addBanks(){const n=parseInt($('ab_n').value);if(!(n>=1&&n<=100))return toast('Enter a number from 1 to 100.');
+ const {data,error}=await sb.rpc('add_power_banks',{p_agent_id:agent.id,p_count:n});if(error)return toast(error.message);$('ab_n').value='';openStickers(data.from)}
+async function openStickers(from=0){show('stickers');const {data}=await sb.from('power_banks').select('code').eq('agent_id',agent.id).order('code');
+ const box=$('stk');box.innerHTML='';(data||[]).filter(b=>parseInt(b.code.slice(4))>=from).forEach(b=>{const d=document.createElement('div'),q=document.createElement('div');d.className='code';d.appendChild(q);new QRCode(q,{text:b.code,width:110,height:110});d.append(b.code);box.appendChild(d)})}
+
+/* ---------- scanner ---------- */
+async function scan(title,cb){show('scan');$('scantitle').textContent=title;scanner=new Html5Qrcode('reader');
+ try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:240},async t=>{await stopScan();cb(t.trim().toUpperCase())})}
+ catch(e){toast('Camera error: '+e);openHome()}}
+async function stopScan(){try{if(scanner){await scanner.stop();scanner.clear()}}catch(e){}scanner=null}
+function activateMode(){const go=()=>scan('Scan stickers to activate',async code=>{
+  const {data:b}=await sb.from('power_banks').select('*').eq('code',code).maybeSingle();let m;
+  if(!b||b.agent_id!==agent.id)m='❌ Not yours / unknown: '+code;
+  else if(b.status!=='inactive')m='ℹ️ '+code+' is already '+b.status;
+  else{await sb.from('power_banks').update({status:'available',activated_at:new Date().toISOString()}).eq('id',b.id);m='✅ Activated '+code}
+  go();$('scanmsg').textContent=m});go()}
+
+/* ---------- rental ---------- */
+function rentStart(){scan('Scan power bank QR',async code=>{
+  const {data:b}=await sb.from('power_banks').select('*').eq('code',code).maybeSingle();
+  if(!b||b.agent_id!==agent.id){toast('Unknown power bank or not assigned to you.');return openHome()}
+  if(b.status!=='available'){toast(`${code} is ${b.status}${b.status==='inactive'?'. Activate it first.':'.'}`);return openHome()}
+  cur=b;plan=null;['f_name','f_phone','f_res','c_h','c_p'].forEach(i=>$(i).value='');$('f_pay').value='';$('tc').checked=false;
+  document.querySelectorAll('.plan').forEach(e=>e.classList.remove('sel'));$('cust').style.display='none';
+  $('rf_code').textContent=code;$('tctext').innerHTML=tcText();updPrice();show('rent')})}
+function selPlan(k){plan=k;document.querySelectorAll('.plan').forEach(e=>e.classList.toggle('sel',e.dataset.k===k));$('cust').style.display=k==='c'?'block':'none';updPrice()}
+function calc(){if(plan==='c'){const h=parseInt($('c_h').value),p=parseInt($('c_p').value);return h>=7&&p>0?{h,p,f:CUSTOM_FEE,t:'custom'}:null}
+ const x=PLANS[plan];return x?{h:x.h,p:x.p,f:x.f,t:plan}:null}
+function updPrice(){const c=calc();$('price').textContent=c?money(c.p):'—';$('sub').disabled=!($('tc').checked&&c)}
+function tcText(){return `<b>Pawa Plug Rental Terms &amp; Conditions</b><ol>
+<li>I received the power bank (${esc(cur.code)}) in working condition and will return it to the Pawa Plug agent at the agreed time and place.</li>
+<li>The rental fee shown on screen is final and is payable through my chosen payment method. Fees are non-refundable.</li>
+<li>If I do not return the power bank when my time ends, an overdue fee is added for every extra hour: MK 200/hour (1-hour rental), MK 500/hour (4-hour), MK 800/hour (6-hour), MK 1,000/hour (custom rental). A part-hour is not charged until the hour is complete.</li>
+<li>If the power bank is lost, stolen, destroyed or damaged beyond repair while in my possession, for any reason, I must pay a replacement fee of MK 65,000.</li>
+<li>I will not open, modify, sell, pawn, lend or transfer the power bank to anyone else.</li>
+<li>Pawa Plug is not responsible for any damage to my phone or devices while using the power bank.</li>
+<li>I allow Pawa Plug to keep and use my name, phone number and residence to contact me and recover its property, and to take lawful action if fees are unpaid or the power bank is not returned.</li></ol>`}
+async function submitRental(){const c=calc(),name=$('f_name').value.trim(),phone=$('f_phone').value.trim(),res=$('f_res').value.trim(),pay=$('f_pay').value;
+ if(!name||!phone||!res||!c||!pay||!$('tc').checked)return toast('Complete every field and accept the T&Cs.');
+ const s=new Date(),e=new Date(+s+c.h*HOUR);$('sub').disabled=true;
+ const {data:r,error}=await sb.from('rentals').insert({agent_id:agent.id,bank_id:cur.id,customer_name:name,customer_phone:phone,residence:res,plan_type:c.t,hours:c.h,price:c.p,overdue_rate:c.f,payment_method:pay,start_at:s.toISOString(),end_at:e.toISOString(),tc_accepted:true,tc_accepted_at:s.toISOString()}).select().single();
+ if(error){$('sub').disabled=false;return toast(error.message)}
+ await sb.from('power_banks').update({status:'rented'}).eq('id',cur.id);scheduleNotifs(r);openRentals()}
+
+/* ---------- active rentals, countdown, overdue ---------- */
+async function loadRentals(){const {data}=await sb.from('rentals').select('*,power_banks(code)').eq('agent_id',agent.id).eq('status','active').order('end_at');
+ const old=Object.fromEntries(rentals.map(r=>[r.id,r._h]));rentals=(data||[]).map(r=>({...r,_h:old[r.id]}));render()}
+async function openRentals(){show('rentals');await loadRentals()}
+function render(){$('rlist').innerHTML=rentals.length?rentals.map(r=>`<div class="card"><b>${esc(r.customer_name)}</b> · ${esc(r.power_banks.code)}<br><small>${esc(r.customer_phone)} · ${esc(r.residence)} · ${esc(r.payment_method)} · ${r.hours}h</small>
+<div class="big" id="t_${r.id}"></div><div id="f_${r.id}"></div>
+<button onclick="receive('${r.id}')">Mark received</button><button class="red" onclick="lost('${r.id}')">Lost / damaged (${money(LOSS_FEE)})</button></div>`).join(''):'<p>No active rentals.</p>';tick()}
+const od=(r,now=Date.now())=>Math.max(0,Math.floor((now-new Date(r.end_at))/HOUR));
+const fmt=ms=>{const s=Math.floor(ms/1000),p=n=>String(n).padStart(2,'0');return`${p(Math.floor(s/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`};
+function banner(msg,bad){const d=document.createElement('div');d.className='bn'+(bad?' od':'');const s=document.createElement('span');s.textContent=msg;const x=document.createElement('span');x.textContent='✕';x.onclick=()=>d.remove();d.append(s,x);$('banners').appendChild(d);navigator.vibrate&&navigator.vibrate([300,150,300])}
+function tick(){const now=Date.now();rentals.forEach(r=>{
+ const left=new Date(r.end_at)-now,h=od(r,now),fee=h*r.overdue_rate,first=r.customer_name.split(' ')[0],t=$('t_'+r.id),f=$('f_'+r.id);
+ if(t){t.textContent=left>0?fmt(left):'TIME UP +'+fmt(-left);t.style.color=left>0?'':'var(--r)'}
+ if(f)f.innerHTML=`Price ${money(r.price)}`+(h?` · Overdue ${h}h: <b>${money(fee)}</b> · Total <b>${money(r.price+fee)}</b>`:'');
+ if(left<=0&&!r.notified_up){r.notified_up=true;sb.from('rentals').update({notified_up:true}).eq('id',r.id).then(()=>{});banner(`${first}'s time is up`)}
+ if(h>=1&&!r.notified_overdue){r.notified_overdue=true;sb.from('rentals').update({notified_overdue:true}).eq('id',r.id).then(()=>{});banner(`${first} is OVERDUE. Fee so far ${money(fee)}`,1)}
+ else if(r._h!==undefined&&h>r._h&&h>1)banner(`${first} overdue ${h}h. Fee now ${money(fee)}`,1);
+ r._h=h})}
+setInterval(tick,1000);setInterval(()=>agent&&ok&&loadRentals(),60000);
+async function receive(id){const r=rentals.find(x=>x.id===id),fee=od(r)*r.overdue_rate;if(!confirm('Mark this power bank as received?'))return;
+ const {error}=await sb.from('rentals').update({status:'returned',returned_at:new Date().toISOString(),overdue_fee:fee}).eq('id',id);if(error)return toast(error.message);
+ await sb.from('power_banks').update({status:'available'}).eq('id',r.bank_id);cancelNotifs(r);
+ if(fee)toast(`Collect overdue fee: ${money(fee)}`);await loadRentals()}
+async function lost(id){const r=rentals.find(x=>x.id===id);if(!confirm(`Mark as lost/damaged? Customer owes ${money(LOSS_FEE)} (plus any overdue fee).`))return;
+ const {error}=await sb.from('rentals').update({status:'lost',returned_at:new Date().toISOString(),overdue_fee:od(r)*r.overdue_rate,loss_fee:LOSS_FEE}).eq('id',id);if(error)return toast(error.message);
+ await sb.from('power_banks').update({status:'lost'}).eq('id',r.bank_id);cancelNotifs(r);await loadRentals()}
+
+/* ---------- phone notifications (work even when the app is closed) ---------- */
+const LN=()=>window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications;
+const nid=(r,k)=>r.seq*20+k;
+async function scheduleNotifs(r){const L=LN();if(!L)return;try{await L.requestPermissions();
+ const first=r.customer_name.split(' ')[0],end=+new Date(r.end_at),n=[{id:nid(r,0),title:'Pawa Plug',body:`${first}'s time is up`,schedule:{at:new Date(end),allowWhileIdle:true}}];
+ for(let k=1;k<=12;k++)n.push({id:nid(r,k),title:'Pawa Plug: OVERDUE',body:`${first} overdue ${k}h. Fee ${money(k*r.overdue_rate)}`,schedule:{at:new Date(end+k*HOUR),allowWhileIdle:true}});
+ await L.schedule({notifications:n})}catch(e){console.log(e)}}
+async function cancelNotifs(r){const L=LN();if(L)try{await L.cancel({notifications:Array.from({length:13},(_,k)=>({id:nid(r,k)}))})}catch(e){}}
+</script></body></html>
