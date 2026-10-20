@@ -16,7 +16,15 @@ button.alt{background:#334155}button.red{background:var(--r)}button:disabled{opa
 .big{font-size:28px;font-weight:700;margin:6px 0}#reader{width:100%;border-radius:12px;overflow:hidden}
 .code{display:inline-block;text-align:center;padding:8px;background:#fff;color:#000;margin:5px;border-radius:8px;font:12px monospace}
 .price{font-size:30px;font-weight:700;color:var(--g)}
-@media print{.np{display:none!important}body{background:#fff}}
+.hero{background:linear-gradient(135deg,#166534,#15803d);border-radius:18px;padding:18px;margin:12px 0}.hero b{font-size:32px;display:block;margin:4px 0}.hero small{color:#bbf7d0}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.tile{background:var(--c);border-radius:14px;padding:14px}.tile b{display:block;font-size:24px;margin-top:2px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #334155}.row:last-child{border:0}
+body{padding-bottom:84px}
+#tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:#111c33;border-top:1px solid #334155;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:8}#tabs.on{display:flex}
+#tabs button{flex:1;background:none;margin:0;padding:6px 2px;font-size:11px;font-weight:500;color:var(--m);border-radius:8px;position:relative}
+#tabs button .ic{display:block;font-size:21px}#tabs button.on{color:var(--g)}
+.badge{position:absolute;top:0;right:18%;background:var(--r);color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;font-style:normal}.badge:empty{display:none}
+@media print{#tabs{display:none!important}.np{display:none!important}body{background:#fff}}
 </style></head><body>
 <div id="banners"></div>
 
@@ -47,21 +55,31 @@ button.alt{background:#334155}button.red{background:var(--r)}button:disabled{opa
 <small class="np">If print doesn't open, screenshot this sheet and print it from any phone or print shop.</small>
 <button class="np" onclick="activateMode()">Next: scan to activate</button><button class="alt np" onclick="openHome()">Skip to home</button></section>
 
-<section class="s" id="home"><h2 id="hello"></h2><small id="stats"></small>
-<button onclick="rentStart()">➕ New rental (scan QR)</button>
-<button onclick="openRentals()">⏱ Active rentals</button>
-<button class="alt" onclick="activateMode()">✅ Activate power banks</button>
-<button class="alt" onclick="show('addbanks')">➕ Add power banks</button>
-<button class="alt" onclick="openStickers()">🏷 My stickers</button>
-<button class="alt" onclick="logout()">Log out</button></section>
+<section class="s" id="home"><small>Welcome back</small><h2 id="hello"></h2>
+<div class="hero"><small>This month's earnings</small><b id="h_earn">MK 0</b><small id="h_sub"></small></div>
+<button onclick="rentStart()" style="padding:18px;font-size:18px">➕ New rental · scan QR</button>
+<div class="tiles"><div class="tile"><small>Active rentals</small><b id="h_act">0</b></div><div class="tile"><small>Overdue</small><b id="h_od">0</b></div>
+<div class="tile"><small>Available banks</small><b id="h_av">0</b></div><div class="tile"><small>Rented out</small><b id="h_rt">0</b></div></div></section>
 
 <section class="s" id="addbanks"><h2>Add power banks</h2>
 <p><small>New codes continue from your last one with the same agent letters. Print their stickers, then scan to activate.</small></p>
 <label>How many power banks?</label><input id="ab_n" type="number" min="1" max="100">
-<button onclick="addBanks()">Generate codes</button><button class="alt" onclick="openHome()">Back</button></section>
+<button onclick="addBanks()">Generate codes</button><button class="alt" onclick="openBanks()">Back</button></section>
+
+<section class="s" id="banks"><h2>Power banks</h2><div class="tiles" id="b_tiles"></div>
+<div class="card"><b>Set up power banks</b><small style="display:block;margin:4px 0 8px">New banks start inactive. Print their stickers, then scan each one to activate.</small>
+<button onclick="show('addbanks')">➕ Add power banks</button><button class="alt" onclick="openStickers()">🏷 Print stickers</button><button class="alt" onclick="activateMode()">✅ Scan to activate</button></div></section>
+
+<section class="s" id="earnings"><h2>Earnings</h2>
+<div style="display:flex;gap:8px;align-items:center"><button class="alt" style="width:60px" onclick="mOff--;loadEarnings()">‹</button><div style="flex:1;text-align:center;font-weight:600" id="e_month"></div><button class="alt" id="e_next" style="width:60px" onclick="mOff++;loadEarnings()">›</button></div>
+<div class="hero"><small>Total for the month</small><b id="e_total"></b><small id="e_count"></small></div>
+<small>Includes rental fees, overdue fees (also those still building up) and lost/damaged fees.</small>
+<div class="card" id="e_break"></div><div class="card"><b>By payment method</b><div id="e_pay"></div></div><div class="card"><b>Rentals this month</b><div id="e_list"></div></div></section>
+
+<section class="s" id="account"><h2>Account</h2><div class="card" id="acc_info"></div><button class="red" onclick="if(confirm('Log out of this phone?'))logout()">Log out</button></section>
 
 <section class="s" id="scan"><h2 id="scantitle">Scan QR</h2><div id="reader"></div><p id="scanmsg"></p>
-<button class="alt" onclick="stopScan().then(openHome)">Done / Cancel</button></section>
+<button class="alt" onclick="stopScan().then(()=>ret())">Done / Cancel</button></section>
 
 <section class="s" id="rent"><h2>New rental</h2><small>Power bank: <b id="rf_code"></b></small>
 <label>Customer name</label><input id="f_name"><label>Phone number</label><input id="f_phone" type="tel"><label>Residence</label><input id="f_res">
@@ -78,8 +96,14 @@ button.alt{background:#334155}button.red{background:var(--r)}button:disabled{opa
 <div class="chk"><input type="checkbox" id="tc" onchange="updPrice()"><span>I have read and accept the Terms &amp; Conditions.</span></div>
 <button id="sub" onclick="submitRental()" disabled>Confirm &amp; start countdown</button><button class="alt" onclick="openHome()">Cancel</button></section>
 
-<section class="s" id="rentals"><h2>Active rentals</h2><div id="rlist"></div><button class="alt" onclick="openHome()">Back</button></section>
+<section class="s" id="rentals"><h2>Active rentals</h2><div id="rlist"></div></section>
 
+<nav id="tabs">
+<button data-s="home" onclick="openHome()"><span class="ic">🏠</span>Home</button>
+<button data-s="rentals" onclick="openRentals()"><span class="ic">⏱</span>Rentals<i class="badge" id="rb"></i></button>
+<button data-s="banks" onclick="openBanks()"><span class="ic">🔋</span>Banks</button>
+<button data-s="earnings" onclick="openEarnings()"><span class="ic">💰</span>Earnings</button>
+<button data-s="account" onclick="openAccount()"><span class="ic">👤</span>Account</button></nav>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -88,26 +112,35 @@ button.alt{background:#334155}button.red{background:var(--r)}button:disabled{opa
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>'MK '+Number(n).toLocaleString();
-const sb=supabase.createClient(CFG.URL,CFG.KEY);
+let sb=null,initErr='';
+try{
+ if(typeof CFG==='undefined'||!CFG.URL||!CFG.KEY||/^YOUR_/.test(CFG.URL)||/^YOUR_/.test(CFG.KEY))throw new Error('Supabase URL / key not set. Edit www/config.js, push to GitHub and install the new APK.');
+ if(typeof supabase==='undefined')throw new Error('Could not load the Supabase library. Check your internet connection and reopen the app.');
+ sb=supabase.createClient(CFG.URL,CFG.KEY);
+}catch(e){initErr=e.message}
 const PLANS={'1h':{h:1,p:1000,f:200},'4h':{h:4,p:2000,f:500},'6h':{h:6,p:3500,f:800}};
 const CUSTOM_FEE=1000,LOSS_FEE=65000,HOUR=3600000;
-let agent=JSON.parse(localStorage.getItem('pp_agent')||'null'),cur=null,plan=null,rentals=[],scanner=null;
-const show=id=>{document.querySelectorAll('.s').forEach(e=>e.classList.toggle('on',e.id===id));scrollTo(0,0)};
+let agent=JSON.parse(localStorage.getItem('pp_agent')||'null'),cur=null,plan=null,rentals=[],scanner=null,ret=()=>openHome(),mOff=0;
+const TABS=['home','rentals','banks','earnings','account'];
+const show=id=>{document.querySelectorAll('.s').forEach(e=>e.classList.toggle('on',e.id===id));$('tabs').classList.toggle('on',TABS.includes(id));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.s===id));scrollTo(0,0)};
 const toast=m=>alert(m);
+let errShown=false;addEventListener('error',e=>{if(!errShown){errShown=true;alert('App error: '+e.message)}});
+if(initErr)$('welcome').insertAdjacentHTML('beforeend','<div class="card" style="background:#7f1d1d">⚠️ '+esc(initErr)+'</div>');
 
 /* ---------- account ---------- */
 let ok=false;
 const keep=a=>{agent={id:a.id,name:a.name,phone:a.phone,prefix:a.prefix};localStorage.setItem('pp_agent',JSON.stringify(agent))};
-async function login(){const phone=$('li_phone').value.trim(),pw=$('li_pw').value;
+async function login(){if(!sb)return toast(initErr);const phone=$('li_phone').value.trim(),pw=$('li_pw').value;
  if(!phone||!pw)return toast('Enter your phone number and password.');
  const {data,error}=await sb.rpc('login_agent',{p_phone:phone,p_password:pw});
  if(error)return toast(error.message);$('li_pw').value='';keep(data);gate()}
 function logout(){localStorage.removeItem('pp_agent');agent=null;ok=false;rentals=[];$('banners').innerHTML='';show('welcome')}
-async function gate(){const {data,error}=await sb.rpc('agent_status',{p_id:agent.id});
+async function gate(){if(!sb)return toast(initErr);const {data,error}=await sb.rpc('agent_status',{p_id:agent.id});
  if(error)return toast(error.message);ok=!!data;
  if(!ok){$('banners').innerHTML='';return show('pending')}
  const k='pp_seen_'+agent.id;if(!localStorage.getItem(k)){localStorage.setItem(k,1);return openStickers()}openHome()}
 async function signup(){
+ if(!sb)return toast(initErr);
  const v=id=>$(id).value.trim(),name=v('su_name'),phone=v('su_phone'),uni=v('su_uni'),g=v('su_gender'),n=parseInt(v('su_n')),pw=$('su_pw').value;
  if(!name||!phone||!uni||!g||!(n>=1&&n<=100))return toast('Fill all fields (1 to 100 power banks).');
  if(pw.length<6)return toast('Password must be at least 6 characters.');
@@ -115,9 +148,28 @@ async function signup(){
  const {data,error}=await sb.rpc('register_agent',{p_name:name,p_phone:phone,p_university:uni,p_gender:g,p_count:n,p_password:pw});
  if(error)return toast(error.message);
  $('su_pw').value=$('su_pw2').value='';keep({id:data.id,name,phone,prefix:data.prefix});show('pending')}
-async function openHome(){show('home');$('hello').textContent=`${agent.name} · ${agent.prefix}`;
- const {data}=await sb.from('power_banks').select('status').eq('agent_id',agent.id);const c=s=>(data||[]).filter(b=>b.status===s).length;
- $('stats').textContent=`Inactive ${c('inactive')} · Available ${c('available')} · Rented ${c('rented')} · Lost ${c('lost')}`;loadRentals()}
+async function bankCounts(){const {data}=await sb.from('power_banks').select('status').eq('agent_id',agent.id);const c=x=>(data||[]).filter(b=>b.status===x).length;return{inactive:c('inactive'),available:c('available'),rented:c('rented'),lost:c('lost')}}
+async function monthStats(off){const d=new Date(),a=new Date(d.getFullYear(),d.getMonth()+off,1),b=new Date(d.getFullYear(),d.getMonth()+off+1,1);
+ const {data,error}=await sb.from('rentals').select('customer_name,price,overdue_fee,loss_fee,status,end_at,overdue_rate,payment_method,start_at,power_banks(code)').eq('agent_id',agent.id).gte('start_at',a.toISOString()).lt('start_at',b.toISOString()).order('start_at',{ascending:false});
+ if(error){toast(error.message);return null}
+ const rows=(data||[]).map(r=>{const o=r.status==='active'?od(r)*r.overdue_rate:r.overdue_fee;return{...r,o,t:r.price+o+r.loss_fee}});
+ const sum=k=>rows.reduce((x,r)=>x+r[k],0),by={};rows.forEach(r=>by[r.payment_method]=(by[r.payment_method]||0)+r.t);
+ return{a,rows,rent:sum('price'),over:sum('o'),loss:sum('loss_fee'),total:sum('t'),by}}
+async function openHome(){show('home');$('hello').textContent=agent.name;await loadRentals();
+ $('h_act').textContent=rentals.length;$('h_od').textContent=rentals.filter(r=>new Date(r.end_at)<=Date.now()).length;
+ const [b,m]=await Promise.all([bankCounts(),monthStats(0)]);$('h_av').textContent=b.available;$('h_rt').textContent=b.rented;
+ if(m){$('h_earn').textContent=money(m.total);$('h_sub').textContent=m.rows.length+' rentals this month'}}
+async function openBanks(){show('banks');const b=await bankCounts();
+ $('b_tiles').innerHTML=[['Inactive',b.inactive],['Available',b.available],['Rented',b.rented],['Lost',b.lost]].map(([k,v])=>`<div class="tile"><small>${k}</small><b>${v}</b></div>`).join('')}
+async function openEarnings(){show('earnings');await loadEarnings()}
+async function loadEarnings(){const m=await monthStats(mOff);if(!m)return;
+ $('e_month').textContent=m.a.toLocaleString('en',{month:'long',year:'numeric'});$('e_next').disabled=mOff>=0;
+ $('e_total').textContent=money(m.total);$('e_count').textContent=m.rows.length+' rentals';
+ const row=(x,y)=>`<div class="row"><span>${x}</span><b>${y}</b></div>`;
+ $('e_break').innerHTML=row('Rental fees',money(m.rent))+row('Overdue fees',money(m.over))+row('Lost / damaged fees',money(m.loss));
+ $('e_pay').innerHTML=Object.keys(m.by).length?Object.entries(m.by).map(([k,v])=>row(esc(k),money(v))).join(''):'<small>No rentals</small>';
+ $('e_list').innerHTML=m.rows.length?m.rows.slice(0,50).map(r=>row(`${esc(r.customer_name)}<br><small>${esc(r.power_banks.code)} · ${new Date(r.start_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · ${r.status}</small>`,money(r.t))).join(''):'<small>Nothing yet</small>'}
+function openAccount(){show('account');const row=(x,y)=>`<div class="row"><span>${x}</span><b>${esc(y)}</b></div>`;$('acc_info').innerHTML=row('Name',agent.name)+row('Phone',agent.phone)+row('Agent code',agent.prefix)}
 async function addBanks(){const n=parseInt($('ab_n').value);if(!(n>=1&&n<=100))return toast('Enter a number from 1 to 100.');
  const {data,error}=await sb.rpc('add_power_banks',{p_agent_id:agent.id,p_count:n});if(error)return toast(error.message);$('ab_n').value='';openStickers(data.from)}
 async function openStickers(from=0){show('stickers');const {data}=await sb.from('power_banks').select('code').eq('agent_id',agent.id).order('code');
@@ -128,7 +180,7 @@ async function scan(title,cb){show('scan');$('scantitle').textContent=title;scan
  try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:240},async t=>{await stopScan();cb(t.trim().toUpperCase())})}
  catch(e){toast('Camera error: '+e);openHome()}}
 async function stopScan(){try{if(scanner){await scanner.stop();scanner.clear()}}catch(e){}scanner=null}
-function activateMode(){const go=()=>scan('Scan stickers to activate',async code=>{
+function activateMode(){ret=()=>openBanks();const go=()=>scan('Scan stickers to activate',async code=>{
   const {data:b}=await sb.from('power_banks').select('*').eq('code',code).maybeSingle();let m;
   if(!b||b.agent_id!==agent.id)m='❌ Not yours / unknown: '+code;
   else if(b.status!=='inactive')m='ℹ️ '+code+' is already '+b.status;
@@ -136,7 +188,7 @@ function activateMode(){const go=()=>scan('Scan stickers to activate',async code
   go();$('scanmsg').textContent=m});go()}
 
 /* ---------- rental ---------- */
-function rentStart(){scan('Scan power bank QR',async code=>{
+function rentStart(){ret=()=>openHome();scan('Scan power bank QR',async code=>{
   const {data:b}=await sb.from('power_banks').select('*').eq('code',code).maybeSingle();
   if(!b||b.agent_id!==agent.id){toast('Unknown power bank or not assigned to you.');return openHome()}
   if(b.status!=='available'){toast(`${code} is ${b.status}${b.status==='inactive'?'. Activate it first.':'.'}`);return openHome()}
@@ -166,7 +218,7 @@ async function submitRental(){const c=calc(),name=$('f_name').value.trim(),phone
 async function loadRentals(){const {data}=await sb.from('rentals').select('*,power_banks(code)').eq('agent_id',agent.id).eq('status','active').order('end_at');
  const old=Object.fromEntries(rentals.map(r=>[r.id,r._h]));rentals=(data||[]).map(r=>({...r,_h:old[r.id]}));render()}
 async function openRentals(){show('rentals');await loadRentals()}
-function render(){$('rlist').innerHTML=rentals.length?rentals.map(r=>`<div class="card"><b>${esc(r.customer_name)}</b> · ${esc(r.power_banks.code)}<br><small>${esc(r.customer_phone)} · ${esc(r.residence)} · ${esc(r.payment_method)} · ${r.hours}h</small>
+function render(){$('rb').textContent=rentals.length||'';$('rlist').innerHTML=rentals.length?rentals.map(r=>`<div class="card"><b>${esc(r.customer_name)}</b> · ${esc(r.power_banks.code)}<br><small>${esc(r.customer_phone)} · ${esc(r.residence)} · ${esc(r.payment_method)} · ${r.hours}h</small>
 <div class="big" id="t_${r.id}"></div><div id="f_${r.id}"></div>
 <button onclick="receive('${r.id}')">Mark received</button><button class="red" onclick="lost('${r.id}')">Lost / damaged (${money(LOSS_FEE)})</button></div>`).join(''):'<p>No active rentals.</p>';tick()}
 const od=(r,now=Date.now())=>Math.max(0,Math.floor((now-new Date(r.end_at))/HOUR));
@@ -197,4 +249,5 @@ async function scheduleNotifs(r){const L=LN();if(!L)return;try{await L.requestPe
  for(let k=1;k<=12;k++)n.push({id:nid(r,k),title:'Pawa Plug: OVERDUE',body:`${first} overdue ${k}h. Fee ${money(k*r.overdue_rate)}`,schedule:{at:new Date(end+k*HOUR),allowWhileIdle:true}});
  await L.schedule({notifications:n})}catch(e){console.log(e)}}
 async function cancelNotifs(r){const L=LN();if(L)try{await L.cancel({notifications:Array.from({length:13},(_,k)=>({id:nid(r,k)}))})}catch(e){}}
+if(agent){const bs=document.querySelectorAll('#welcome button');bs.forEach(b=>b.style.display='none');gate().finally(()=>bs.forEach(b=>b.style.display=''))}
 </script></body></html>
