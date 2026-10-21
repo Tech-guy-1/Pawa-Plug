@@ -9,7 +9,7 @@ input,select{width:100%;padding:12px;margin:6px 0 12px;border-radius:10px;border
 button{width:100%;padding:14px;border:0;border-radius:12px;background:var(--g);color:#fff;font-size:16px;font-weight:600;margin:6px 0}
 button.alt{background:#334155}button.red{background:var(--r)}button:disabled{opacity:.4}
 .plans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.plan{padding:12px;border:2px solid #334155;border-radius:12px;text-align:center}.plan.sel{border-color:var(--g);background:#052e16}
-.tc{max-height:190px;overflow:auto;font-size:13px;color:var(--m);background:#0b1220;padding:10px;border-radius:10px}
+.tc{max-height:260px;overflow:auto;font-size:13px;color:var(--m);background:#0b1220;padding:10px;border-radius:10px}
 .chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.chk input{width:22px;margin:2px 0}
 #banners{position:fixed;top:env(safe-area-inset-top);left:0;right:0;z-index:9;padding:8px}
 .bn{background:var(--y);color:#000;padding:12px;border-radius:12px;margin-bottom:6px;font-weight:600;display:flex;justify-content:space-between;gap:8px}.bn.od{background:var(--r);color:#fff}
@@ -32,6 +32,11 @@ button .i{margin-right:6px}#tabs button .i{display:block;margin:0 auto 2px;width
 .th{width:60px;height:60px;border-radius:12px;object-fit:cover;background:#0b1220;flex:none;display:flex;align-items:center;justify-content:center;color:var(--m)}.th .i{width:28px;height:28px}
 .dimg{width:100%;max-width:320px;aspect-ratio:1;object-fit:cover;border-radius:16px;background:#0b1220;display:block;margin:10px auto}
 .btn{flex:1;display:block;text-align:center;padding:14px;border-radius:12px;background:#334155;color:#fff;text-decoration:none;font-weight:600}
+.qr{width:116px;height:116px;image-rendering:pixelated;display:block;margin:0 auto 4px}
+.code .cd{font:600 13px monospace}.code.lost{border:3px solid #dc2626}.code.lost .cd{color:#dc2626;font-weight:800}.sst{color:#dc2626;font:800 11px system-ui}
+.shothint{display:none}#stickers.shot{max-width:none;background:#fff;min-height:100vh;padding:10px}#stickers.shot>*:not(#stk):not(.shothint){display:none!important}
+#stickers.shot .shothint{display:block;color:#111;text-align:center;font-size:12px;margin-bottom:6px}body.shotbody{background:#fff}
+.tc ul,.tc ol{padding-left:18px;margin:6px 0}.tc li{margin:9px 0}.tc .key{background:#052e16;border-radius:10px;padding:10px;color:#d1fae5;margin:8px 0}.tc .key ul{margin:4px 0 0}
 @media print{#tabs{display:none!important}.np{display:none!important}body{background:#fff}}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -53,7 +58,7 @@ button .i{margin-right:6px}#tabs button .i{display:block;margin:0 auto 2px;width
 <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-12 7l-5 1 1.5-4.5A8 8 0 1121 12z"/></symbol>
 <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
 <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
-<symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h.01M21 21h-4v-4"/></symbol>
 <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3"/><path d="M7 12h10"/></symbol>
 </defs></svg>
 <div id="banners"></div>
@@ -78,12 +83,14 @@ button .i{margin-right:6px}#tabs button .i{display:block;margin:0 auto 2px;width
 <div class="card">Your account has been created but is locked. Please wait for an admin to verify your account. Once verified, you can log in and get your power bank QR codes.</div>
 <button onclick="gate()">Check again</button><button class="alt" onclick="logout()">Log out</button></section>
 
-<section class="s" id="stickers"><h2 class="np">Your power bank stickers</h2>
-<p class="np"><small>Every code starts with your agent letters. Print and stick one on each power bank, then activate them by scanning.</small></p>
-<div id="stk"></div>
-<button class="np" onclick="window.print()">Print stickers</button>
-<small class="np">If print doesn't open, screenshot this sheet and print it from any phone or print shop.</small>
-<button class="np" onclick="activateMode()">Next: scan to activate</button><button class="alt np" onclick="openHome()">Skip to home</button></section>
+<section class="s" id="stickers"><h2 id="stk_title">Stickers</h2>
+<div class="card"><b>How to print the stickers</b>
+<ol style="margin:6px 0 0;padding-left:18px;font-size:14px;color:var(--m)"><li>Tap Screenshot mode below and take a screenshot of the sheet. If you have many, scroll and take more than one.</li><li>Print the screenshot from your gallery, or take it to a print shop.</li><li>Cut out each sticker and stick one on every power bank.</li><li>Then scan each sticker to activate that power bank.</li></ol></div>
+<div class="shothint">Take your screenshot now. Tap the sheet to go back.</div>
+<div id="stk" onclick="shotMode(false)"></div>
+<button onclick="shotMode(true)"><svg class="i"><use href="#i-camera"/></svg> Screenshot mode</button>
+<button class="alt" id="stk_all" onclick="openStickers()" style="display:none">Show all stickers</button>
+<button class="alt" onclick="activateMode()"><svg class="i"><use href="#i-scan"/></svg> Scan to activate</button><button class="alt" onclick="openBanks()">Done</button></section>
 
 <section class="s" id="home"><small>Welcome back</small><h2 id="hello"></h2>
 <div class="hero"><small>This month's earnings</small><b id="h_earn">MK 0</b><small id="h_sub"></small></div>
@@ -103,8 +110,8 @@ button .i{margin-right:6px}#tabs button .i{display:block;margin:0 auto 2px;width
 <button onclick="receive(detailId)"><svg class="i"><use href="#i-ok"/></svg> Mark received</button><button class="red" onclick="lost(detailId)"><svg class="i"><use href="#i-xc"/></svg> Lost / damaged</button></section>
 
 <section class="s" id="banks"><h2>Power banks</h2><div class="tiles" id="b_tiles"></div>
-<div class="card"><b>Set up power banks</b><small style="display:block;margin:4px 0 8px">New banks start inactive. Print their stickers, then scan each one to activate.</small>
-<button onclick="show('addbanks')"><svg class="i"><use href="#i-plus"/></svg> Add power banks</button><button class="alt" onclick="openStickers()"><svg class="i"><use href="#i-printer"/></svg> Print stickers</button><button class="alt" onclick="activateMode()"><svg class="i"><use href="#i-scan"/></svg> Scan to activate</button></div></section>
+<div class="card"><b>Set up power banks</b><small style="display:block;margin:4px 0 8px">New banks start inactive. Take a screenshot of their stickers and print it, then scan each sticker to activate.</small>
+<button onclick="show('addbanks')"><svg class="i"><use href="#i-plus"/></svg> Add power banks</button><button class="alt" onclick="openStickers()"><svg class="i"><use href="#i-grid"/></svg> View stickers</button><button class="alt" onclick="activateMode()"><svg class="i"><use href="#i-scan"/></svg> Scan to activate</button></div></section>
 
 <section class="s" id="earnings"><h2>Earnings</h2>
 <div style="display:flex;gap:8px;align-items:center"><button class="alt" style="width:60px" onclick="mOff--;loadEarnings()"><svg class="i"><use href="#i-chev-l"/></svg></button><div style="flex:1;text-align:center;font-weight:600" id="e_month"></div><button class="alt" id="e_next" style="width:60px" onclick="mOff++;loadEarnings()"><svg class="i"><use href="#i-chev-r"/></svg></button></div>
@@ -144,8 +151,9 @@ button .i{margin-right:6px}#tabs button .i{display:block;margin:0 auto 2px;width
 <button data-s="earnings" onclick="openEarnings()"><svg class="i"><use href="#i-wallet"/></svg>Earnings</button>
 <button data-s="account" onclick="openAccount()"><svg class="i"><use href="#i-user"/></svg>Account</button></nav>
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="lib/supabase.js"></script>
+<script src="lib/html5-qrcode.min.js"></script>
+<script src="lib/qrcode.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -162,9 +170,9 @@ const PLANS={'1h':{h:1,p:1000,f:200},'4h':{h:4,p:2000,f:500},'6h':{h:6,p:3500,f:
 const CUSTOM_FEE=1000,LOSS_FEE=65000,HOUR=3600000;
 let agent=JSON.parse(localStorage.getItem('pp_agent')||'null'),cur=null,plan=null,rentals=[],scanner=null,ret=()=>openHome(),mOff=0;
 const TABS=['home','rentals','banks','earnings','account'];
-const show=id=>{document.querySelectorAll('.s').forEach(e=>e.classList.toggle('on',e.id===id));$('tabs').classList.toggle('on',TABS.includes(id));if(id!=='rent')selfieStop();document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.s===id));scrollTo(0,0)};
+const show=id=>{document.querySelectorAll('.s').forEach(e=>e.classList.toggle('on',e.id===id));$('tabs').classList.toggle('on',TABS.includes(id));if(id!=='rent')selfieStop();curScreen=id;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.s===id));scrollTo(0,0)};
 const toast=m=>alert(m);
-let errShown=false,detailId=null,sStream=null,sBlob=null,sThumb=null;const urlCache={};addEventListener('error',e=>{if(!errShown){errShown=true;alert('App error: '+e.message)}});
+let errShown=false,detailId=null,sStream=null,sBlob=null,sThumb=null;const urlCache={};let lastTc='',curScreen='welcome';addEventListener('error',e=>{if(!errShown){errShown=true;alert('App error: '+e.message)}});
 if(initErr)$('welcome').insertAdjacentHTML('beforeend','<div class="card" style="background:#7f1d1d">'+ic('alert')+' '+esc(initErr)+'</div>');
 
 /* ---------- account ---------- */
@@ -174,9 +182,9 @@ async function login(){if(!sb)return toast(initErr);const phone=$('li_phone').va
  if(!phone||!pw)return toast('Enter your phone number and password.');
  const {data,error}=await sb.rpc('login_agent',{p_phone:phone,p_password:pw});
  if(error)return toast(error.message);$('li_pw').value='';keep(data);gate()}
-function logout(){localStorage.removeItem('pp_agent');agent=null;ok=false;rentals=[];$('banners').innerHTML='';show('welcome')}
+function logout(){if(agent){localStorage.removeItem('pp_ver_'+agent.id);localStorage.removeItem('pp_snap_'+agent.id)}localStorage.removeItem('pp_agent');agent=null;ok=false;rentals=[];$('banners').innerHTML='';show('welcome')}
 async function gate(){if(!sb)return toast(initErr);const {data,error}=await sb.rpc('agent_status',{p_id:agent.id});
- if(error)return toast(error.message);ok=!!data;
+ if(error)return toast(error.message);ok=!!data;if(ok)localStorage.setItem('pp_ver_'+agent.id,'1');
  if(!ok){$('banners').innerHTML='';return show('pending')}
  const k='pp_seen_'+agent.id;if(!localStorage.getItem(k)){localStorage.setItem(k,1);return openStickers()}openHome()}
 async function signup(){
@@ -188,18 +196,20 @@ async function signup(){
  const {data,error}=await sb.rpc('register_agent',{p_name:name,p_phone:phone,p_university:uni,p_gender:g,p_count:n,p_password:pw});
  if(error)return toast(error.message);
  $('su_pw').value=$('su_pw2').value='';keep({id:data.id,name,phone,prefix:data.prefix});show('pending')}
-async function bankCounts(){const {data}=await sb.from('power_banks').select('status').eq('agent_id',agent.id);const c=x=>(data||[]).filter(b=>b.status===x).length;return{inactive:c('inactive'),available:c('available'),rented:c('rented'),lost:c('lost')}}
+async function bankCounts(){const {data,error}=await sb.from('power_banks').select('status').eq('agent_id',agent.id);if(error)return null;const c=x=>(data||[]).filter(b=>b.status===x).length;return{inactive:c('inactive'),available:c('available'),rented:c('rented'),lost:c('lost')}}
 async function monthStats(off){const d=new Date(),a=new Date(d.getFullYear(),d.getMonth()+off,1),b=new Date(d.getFullYear(),d.getMonth()+off+1,1);
  const {data,error}=await sb.from('rentals').select('customer_name,price,overdue_fee,loss_fee,status,end_at,overdue_rate,payment_method,start_at,power_banks(code)').eq('agent_id',agent.id).gte('start_at',a.toISOString()).lt('start_at',b.toISOString()).order('start_at',{ascending:false});
  if(error){toast(error.message);return null}
  const rows=(data||[]).map(r=>{const o=r.status==='active'?od(r)*r.overdue_rate:r.overdue_fee;return{...r,o,t:r.price+o+r.loss_fee}});
  const sum=k=>rows.reduce((x,r)=>x+r[k],0),by={};rows.forEach(r=>by[r.payment_method]=(by[r.payment_method]||0)+r.t);
  return{a,rows,rent:sum('price'),over:sum('o'),loss:sum('loss_fee'),total:sum('t'),by}}
-async function openHome(){show('home');$('hello').textContent=agent.name;await loadRentals();
- $('h_act').textContent=rentals.length;$('h_od').textContent=rentals.filter(r=>new Date(r.end_at)<=Date.now()).length;
- const [b,m]=await Promise.all([bankCounts(),monthStats(0)]);$('h_av').textContent=b.available;$('h_rt').textContent=b.rented;
- if(m){$('h_earn').textContent=money(m.total);$('h_sub').textContent=m.rows.length+' rentals this month'}}
-async function openBanks(){show('banks');const b=await bankCounts();
+function paintHome(o){$('h_act').textContent=o.act;$('h_od').textContent=o.od;$('h_av').textContent=o.av;$('h_rt').textContent=o.rt;if(o.earn!=null){$('h_earn').textContent=money(o.earn);$('h_sub').textContent=(o.n||0)+' rentals this month'}}
+async function openHome(){show('home');$('hello').textContent=agent.name;
+ const sk='pp_snap_'+agent.id,sn=JSON.parse(localStorage.getItem(sk)||'null');if(sn)paintHome(sn);
+ const [,b,m]=await Promise.all([loadRentals(),bankCounts(),monthStats(0)]);if(!b)return;
+ const o={act:rentals.length,od:rentals.filter(r=>new Date(r.end_at)<=Date.now()).length,av:b.available,rt:b.rented,earn:m?m.total:(sn&&sn.earn),n:m?m.rows.length:(sn&&sn.n)};
+ localStorage.setItem(sk,JSON.stringify(o));paintHome(o)}
+async function openBanks(){show('banks');const b=await bankCounts();if(!b)return toast('Could not load. Check your connection.');
  $('b_tiles').innerHTML=[['Inactive',b.inactive],['Available',b.available],['Rented',b.rented],['Lost',b.lost]].map(([k,v])=>`<div class="tile"><small>${k}</small><b>${v}</b></div>`).join('')}
 async function openEarnings(){show('earnings');await loadEarnings()}
 async function loadEarnings(){const m=await monthStats(mOff);if(!m)return;
@@ -212,8 +222,14 @@ async function loadEarnings(){const m=await monthStats(mOff);if(!m)return;
 function openAccount(){show('account');const row=(x,y)=>`<div class="row"><span>${x}</span><b>${esc(y)}</b></div>`;$('acc_info').innerHTML=row('Name',agent.name)+row('Phone',agent.phone)+row('Agent code',agent.prefix)}
 async function addBanks(){const n=parseInt($('ab_n').value);if(!(n>=1&&n<=100))return toast('Enter a number from 1 to 100.');
  const {data,error}=await sb.rpc('add_power_banks',{p_agent_id:agent.id,p_count:n});if(error)return toast(error.message);$('ab_n').value='';openStickers(data.from)}
-async function openStickers(from=0){show('stickers');const {data}=await sb.from('power_banks').select('code').eq('agent_id',agent.id).order('code');
- const box=$('stk');box.innerHTML='';(data||[]).filter(b=>parseInt(b.code.slice(4))>=from).forEach(b=>{const d=document.createElement('div'),q=document.createElement('div');d.className='code';d.appendChild(q);new QRCode(q,{text:b.code,width:110,height:110});d.append(b.code);box.appendChild(d)})}
+function shotMode(on){$('stickers').classList.toggle('shot',on);document.body.classList.toggle('shotbody',on);scrollTo(0,0)}
+function qrImg(t){const q=qrcode(0,'M');q.addData(t);q.make();const i=new Image();i.src=q.createDataURL(5,2);i.className='qr';i.alt=t;return i}
+async function openStickers(from=0){show('stickers');shotMode(false);$('stk_all').style.display=from>0?'block':'none';$('stk_title').textContent=from>0?'New stickers':'Your stickers';
+ const {data,error}=await sb.from('power_banks').select('code,status').eq('agent_id',agent.id).order('code');if(error)return toast(error.message);
+ const box=$('stk');box.innerHTML='';
+ (data||[]).filter(b=>parseInt(b.code.slice(4))>=from).forEach(b=>{const d=document.createElement('div'),lost=b.status==='lost';d.className='code'+(lost?' lost':'');
+  d.appendChild(qrImg(b.code));const c=document.createElement('div');c.className='cd';c.textContent=b.code;d.appendChild(c);
+  if(lost){const l=document.createElement('div');l.className='sst';l.textContent='LOST';d.appendChild(l)}box.appendChild(d)})}
 
 /* ---------- scanner ---------- */
 async function scan(title,cb){show('scan');$('scantitle').textContent=title;scanner=new Html5Qrcode('reader');
@@ -234,19 +250,32 @@ function rentStart(){ret=()=>openHome();scan('Scan power bank QR',async code=>{
   if(b.status!=='available'){toast(`${code} is ${b.status}${b.status==='inactive'?'. Activate it first.':'.'}`);return openHome()}
   cur=b;plan=null;['f_name','f_phone','f_res','c_h','c_p'].forEach(i=>$(i).value='');$('f_pay').value='';$('tc').checked=false;
   document.querySelectorAll('.plan').forEach(e=>e.classList.remove('sel'));$('cust').style.display='none';
-  selfieReset();$('rf_code').textContent=code;$('tctext').innerHTML=tcText();updPrice();show('rent')})}
+  selfieReset();$('rf_code').textContent=code;lastTc='';updPrice();show('rent')})}
 function selPlan(k){plan=k;document.querySelectorAll('.plan').forEach(e=>e.classList.toggle('sel',e.dataset.k===k));$('cust').style.display=k==='c'?'block':'none';updPrice()}
 function calc(){if(plan==='c'){const h=parseInt($('c_h').value),p=parseInt($('c_p').value);return h>=7&&p>0?{h,p,f:CUSTOM_FEE,t:'custom'}:null}
  const x=PLANS[plan];return x?{h:x.h,p:x.p,f:x.f,t:plan}:null}
-function updPrice(){const c=calc();$('price').textContent=c?money(c.p):'—';$('sub').disabled=!($('tc').checked&&c&&sBlob)}
-function tcText(){return `<b>Pawa Plug Rental Terms &amp; Conditions</b><ol>
-<li>I received the power bank (${esc(cur.code)}) in working condition and will return it to the Pawa Plug agent at the agreed time and place.</li>
-<li>The rental fee shown on screen is final and is payable through my chosen payment method. Fees are non-refundable.</li>
-<li>If I do not return the power bank when my time ends, an overdue fee is added for every extra hour: MK 200/hour (1-hour rental), MK 500/hour (4-hour), MK 800/hour (6-hour), MK 1,000/hour (custom rental). A part-hour is not charged until the hour is complete.</li>
-<li>If the power bank is lost, stolen, destroyed or damaged beyond repair while in my possession, for any reason, I must pay a replacement fee of MK 65,000.</li>
-<li>I will not open, modify, sell, pawn, lend or transfer the power bank to anyone else.</li>
-<li>Pawa Plug is not responsible for any damage to my phone or devices while using the power bank.</li>
-<li>I allow Pawa Plug to keep and use my name, phone number and residence to contact me and recover its property, and to take lawful action if fees are unpaid or the power bank is not returned.</li></ol>`}
+function updPrice(){const c=calc();const tt=tcText();if(tt!==lastTc){lastTc=tt;$('tctext').innerHTML=tt}$('price').textContent=c?money(c.p):'—';$('sub').disabled=!($('tc').checked&&c&&sBlob)}
+function tcText(){const c=calc(),code=esc(cur?cur.code:''),
+ rate=c?`<b>${money(c.f)}</b> for every full hour`:'<b>MK 200</b> (1-hour rental), <b>MK 500</b> (4-hour), <b>MK 800</b> (6-hour) or <b>MK 1,000</b> (custom rental) for every full hour',
+ mine=c?` Your rental is <b>${c.h} hour${c.h>1?'s':''}</b> at <b>${money(c.p)}</b>.`:'';
+ return `<b>Pawa Plug Power Bank Rental Agreement</b>
+<div class="key"><b>The key points in plain words</b><ul>
+<li>Return the power bank on time to the Pawa Plug agent who gave it to you.</li>
+<li>If you are late, you pay ${rate} until it is returned.</li>
+<li>If it is lost, stolen or damaged, you pay a fixed fee of <b>MK 65,000</b>.</li>
+<li>We keep your photo and details so we can identify you and recover our property.</li></ul></div>
+<ol>
+<li><b>This agreement.</b> By ticking the box and confirming, you (the "Customer") enter into a binding agreement with Pawa Plug ("we", "us"). It covers the power bank with code <b>${code}</b>. The agent who hands it to you acts on our behalf.</li>
+<li><b>Rental period.</b> The rental starts the moment you confirm on this screen and ends when the hours you chose have passed.${mine} The countdown in our app is the official time.</li>
+<li><b>Rental fee.</b> The fee shown on screen was agreed before you confirmed. It is payable in full using the payment method you selected. Once the countdown starts, the fee is not refundable, even if you return the power bank early.</li>
+<li><b>Late return.</b> If you do not return the power bank when your time ends, a late fee is added on top of the rental fee: ${rate}. The late fee keeps growing until the agent records the power bank as returned. A part of an hour is not charged until that hour is complete.</li>
+<li><b>Loss, theft or damage.</b> The power bank always remains our property. If it is lost, stolen, destroyed or damaged beyond repair while it is in your possession, for any reason and whether or not it was your fault, you must pay a fixed replacement fee of <b>MK 65,000</b>, plus any late fees already due. You agree that this amount is a fair estimate of our loss and not a penalty.</li>
+<li><b>Your responsibilities.</b> You will keep the power bank safe, use it only to charge phones and similar devices, and return it in the condition you received it (normal wear excepted). You will not open it, change it, sell it, pawn it, lend it or give it to anyone else.</li>
+<li><b>Your details and photo.</b> You confirm that the information you gave us is true and that the selfie is a photo of you. You allow us to collect and store your name, phone number, residence and selfie, and to use them to identify you, contact you and recover the power bank. If needed, we may also share them with the police or other lawful authorities. We will not sell your details.</li>
+<li><b>If the power bank is not returned or fees are not paid.</b> We may contact you repeatedly, report the matter to the police, and take lawful action to recover the power bank and any amount you owe, including the reasonable costs of recovery.</li>
+<li><b>Our responsibility.</b> You use the power bank at your own risk. To the fullest extent the law allows, we are not responsible for damage to your phone or other devices, loss of data, or any indirect loss that results from using the power bank.</li>
+<li><b>General.</b> This agreement is governed by the laws of Malawi. We may change these terms for future rentals, but not for a rental that has already started. If any part of this agreement cannot be enforced, the rest still applies. This is the full agreement between you and us for this rental.</li></ol>
+<p>By ticking the box below, you confirm that you have read and understood this agreement and that you accept it.</p>`}
 async function submitRental(){const c=calc(),name=$('f_name').value.trim(),phone=$('f_phone').value.trim(),res=$('f_res').value.trim(),pay=$('f_pay').value;
  if(!name||!phone||!res||!c||!pay||!$('tc').checked||!sBlob)return toast('Complete every field, take the selfie and accept the T&Cs.');
  const s=new Date(),e=new Date(+s+c.h*HOUR);$('sub').disabled=true;
@@ -259,7 +288,7 @@ async function submitRental(){const c=calc(),name=$('f_name').value.trim(),phone
  await sb.from('power_banks').update({status:'rented'}).eq('id',cur.id);scheduleNotifs(r);openRentals()}
 
 /* ---------- active rentals, countdown, overdue ---------- */
-async function loadRentals(){const {data}=await sb.from('rentals').select('*,power_banks(code)').eq('agent_id',agent.id).eq('status','active').order('end_at');
+async function loadRentals(){const {data,error}=await sb.from('rentals').select('*,power_banks(code)').eq('agent_id',agent.id).eq('status','active').order('end_at');if(error)return;
  const old=Object.fromEntries(rentals.map(r=>[r.id,r._h]));rentals=(data||[]).map(r=>({...r,_h:old[r.id]}));render()}
 async function openRentals(){show('rentals');await loadRentals()}
 const tp=r=>r.selfie_path.replace('.jpg','_t.jpg');
@@ -325,5 +354,12 @@ async function openDetail(id){const r=rentals.find(x=>x.id===id);if(!r)return;de
  if(r.selfie_path){await signUrls([r.selfie_path,tp(r)]);const th=urlCache[tp(r)],full=urlCache[r.selfie_path];
   if(th&&detailId===id)im.src=th;if(full){const p=new Image();p.onload=()=>{if(detailId===id)im.src=full};p.src=full}}}
 
-if(agent){const bs=document.querySelectorAll('#welcome button');bs.forEach(b=>b.style.display='none');gate().finally(()=>bs.forEach(b=>b.style.display=''))}
+const AppP=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.App;
+function goBack(){if($('stickers').classList.contains('shot'))return shotMode(false);
+ const m={scan:()=>stopScan().then(()=>ret()),rent:()=>openHome(),rdetail:()=>openRentals(),stickers:()=>openBanks(),addbanks:()=>openBanks(),signup:()=>show('welcome'),login:()=>show('welcome'),rentals:()=>openHome(),banks:()=>openHome(),earnings:()=>openHome(),account:()=>openHome()};
+ if(m[curScreen])return m[curScreen]();if(AppP)AppP.exitApp()}
+if(AppP)AppP.addListener('backButton',goBack);
+if(agent&&sb&&localStorage.getItem('pp_ver_'+agent.id)==='1'){ok=true;openHome();
+ sb.rpc('agent_status',{p_id:agent.id}).then(({data,error})=>{if(!error&&data===false){ok=false;localStorage.removeItem('pp_ver_'+agent.id);rentals=[];$('banners').innerHTML='';show('pending')}})}
+else if(agent){const bs=document.querySelectorAll('#welcome button');bs.forEach(b=>b.style.display='none');gate().finally(()=>bs.forEach(b=>b.style.display=''))}
 </script></body></html>
