@@ -125,9 +125,11 @@ button .i{margin-right:6px}#tabs button .i{display:block;margin:0 auto 2px;width
 <button class="alt" onclick="stopScan().then(()=>ret())">Done / Cancel</button></section>
 
 <section class="s" id="rent"><h2>New rental</h2><small>Power bank: <b id="rf_code"></b></small>
-<label>Customer name</label><input id="f_name"><label>Phone number</label><input id="f_phone" type="tel"><label>Residence</label><input id="f_res">
+<label>Customer name</label><input id="f_name"><label>Gender</label><select id="f_gender"><option value="">Select</option><option>Male</option><option>Female</option></select>
+<label>Phone number</label><input id="f_phone" type="tel"><label>Residence</label><input id="f_res">
 <label>Customer selfie (required)</label>
 <div class="selfie"><div id="sph"><svg class="i"><use href="#i-user"/></svg></div><video id="sv" autoplay playsinline muted style="display:none"></video><img id="sp" alt="Selfie preview" style="display:none"><canvas id="sc" style="display:none"></canvas></div>
+<input type="file" accept="image/*" capture="user" id="sfile" style="display:none" onchange="selfieFile(this)">
 <button type="button" class="alt" id="sbtn" onclick="selfieBtn()"><svg class="i"><use href="#i-camera"/></svg> Take selfie</button>
 <label>Duration</label>
 <div class="plans">
@@ -225,30 +227,34 @@ async function addBanks(){const n=parseInt($('ab_n').value);if(!(n>=1&&n<=100))r
 function shotMode(on){$('stickers').classList.toggle('shot',on);document.body.classList.toggle('shotbody',on);scrollTo(0,0)}
 function qrImg(t){const q=qrcode(0,'M');q.addData(t);q.make();const i=new Image();i.src=q.createDataURL(5,2);i.className='qr';i.alt=t;return i}
 async function openStickers(from=0){show('stickers');shotMode(false);$('stk_all').style.display=from>0?'block':'none';$('stk_title').textContent=from>0?'New stickers':'Your stickers';
- const {data,error}=await sb.from('power_banks').select('code,status').eq('agent_id',agent.id).order('code');if(error)return toast(error.message);
+ const {data,error}=await sb.rpc('get_stickers',{p_agent_id:agent.id});if(error)return toast(error.message);
  const box=$('stk');box.innerHTML='';
  (data||[]).filter(b=>parseInt(b.code.slice(4))>=from).forEach(b=>{const d=document.createElement('div'),lost=b.status==='lost';d.className='code'+(lost?' lost':'');
-  d.appendChild(qrImg(b.code));const c=document.createElement('div');c.className='cd';c.textContent=b.code;d.appendChild(c);
+  d.appendChild(qrImg('PP:'+b.code+':'+b.token));const c=document.createElement('div');c.className='cd';c.textContent=b.code;d.appendChild(c);
   if(lost){const l=document.createElement('div');l.className='sst';l.textContent='LOST';d.appendChild(l)}box.appendChild(d)})}
 
 /* ---------- scanner ---------- */
 async function scan(title,cb){show('scan');$('scantitle').textContent=title;scanner=new Html5Qrcode('reader');
- try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:240},async t=>{await stopScan();cb(t.trim().toUpperCase())})}
+ try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:240},async t=>{await stopScan();cb(t.trim())})}
  catch(e){toast('Camera error: '+e);openHome()}}
-async function stopScan(){try{if(scanner){await scanner.stop();scanner.clear()}}catch(e){}scanner=null}
-function activateMode(){ret=()=>openBanks();const go=()=>scan('Scan stickers to activate',async code=>{
-  const {data:b}=await sb.from('power_banks').select('*').eq('code',code).maybeSingle();let m;
-  if(!b||b.agent_id!==agent.id)m=ic('xc')+' Not yours / unknown: '+esc(code);
-  else if(b.status!=='inactive')m=ic('info')+' '+esc(code)+' is already '+esc(b.status);
-  else{await sb.from('power_banks').update({status:'available',activated_at:new Date().toISOString()}).eq('id',b.id);m=ic('ok')+' Activated '+esc(code)}
+async function stopScan(){const vs=[...document.querySelectorAll('#reader video')].map(v=>v.srcObject).filter(Boolean);
+ try{if(scanner){await scanner.stop();scanner.clear()}}catch(e){}scanner=null;
+ vs.forEach(st=>{try{st.getTracks().forEach(t=>t.stop())}catch(e){}})}
+function activateMode(){ret=()=>openBanks();const go=()=>scan('Scan stickers to activate',async text=>{
+  const {data,error}=await sb.rpc('activate_bank',{p_agent_id:agent.id,p_payload:text});let m;
+  if(error)m=ic('xc')+' '+esc(error.message);
+  else if(data.result==='ok')m=ic('ok')+' Activated '+esc(data.code);
+  else if(data.result==='already')m=ic('info')+' '+esc(data.code)+' is already '+esc(data.status);
+  else m=ic('xc')+' QR code not recognised. Only stickers made for your own account work.';
   go();$('scanmsg').innerHTML=m});go()}
 
 /* ---------- rental ---------- */
-function rentStart(){ret=()=>openHome();scan('Scan power bank QR',async code=>{
-  const {data:b}=await sb.from('power_banks').select('*').eq('code',code).maybeSingle();
-  if(!b||b.agent_id!==agent.id){toast('Unknown power bank or not assigned to you.');return openHome()}
+function rentStart(){ret=()=>openHome();scan('Scan power bank QR',async text=>{
+  const {data:b}=await sb.rpc('resolve_bank',{p_agent_id:agent.id,p_payload:text});
+  if(!b){toast('QR code not recognised. Only stickers made for your own account work.');return openHome()}
+  const code=b.code;
   if(b.status!=='available'){toast(`${code} is ${b.status}${b.status==='inactive'?'. Activate it first.':'.'}`);return openHome()}
-  cur=b;plan=null;['f_name','f_phone','f_res','c_h','c_p'].forEach(i=>$(i).value='');$('f_pay').value='';$('tc').checked=false;
+  cur=b;plan=null;['f_name','f_phone','f_res','c_h','c_p'].forEach(i=>$(i).value='');$('f_pay').value='';$('f_gender').value='';$('tc').checked=false;
   document.querySelectorAll('.plan').forEach(e=>e.classList.remove('sel'));$('cust').style.display='none';
   selfieReset();$('rf_code').textContent=code;lastTc='';updPrice();show('rent')})}
 function selPlan(k){plan=k;document.querySelectorAll('.plan').forEach(e=>e.classList.toggle('sel',e.dataset.k===k));$('cust').style.display=k==='c'?'block':'none';updPrice()}
@@ -276,14 +282,14 @@ function tcText(){const c=calc(),code=esc(cur?cur.code:''),
 <li><b>Our responsibility.</b> You use the power bank at your own risk. To the fullest extent the law allows, we are not responsible for damage to your phone or other devices, loss of data, or any indirect loss that results from using the power bank.</li>
 <li><b>General.</b> This agreement is governed by the laws of Malawi. We may change these terms for future rentals, but not for a rental that has already started. If any part of this agreement cannot be enforced, the rest still applies. This is the full agreement between you and us for this rental.</li></ol>
 <p>By ticking the box below, you confirm that you have read and understood this agreement and that you accept it.</p>`}
-async function submitRental(){const c=calc(),name=$('f_name').value.trim(),phone=$('f_phone').value.trim(),res=$('f_res').value.trim(),pay=$('f_pay').value;
- if(!name||!phone||!res||!c||!pay||!$('tc').checked||!sBlob)return toast('Complete every field, take the selfie and accept the T&Cs.');
+async function submitRental(){const c=calc(),name=$('f_name').value.trim(),phone=$('f_phone').value.trim(),res=$('f_res').value.trim(),pay=$('f_pay').value,gen=$('f_gender').value;
+ if(!name||!phone||!res||!c||!pay||!gen||!$('tc').checked||!sBlob)return toast('Complete every field, take the selfie and accept the T&Cs.');
  const s=new Date(),e=new Date(+s+c.h*HOUR);$('sub').disabled=true;
  const uid=crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2),path=`${agent.id}/${uid}.jpg`,st=sb.storage.from('selfies'),lbl='Confirm & start countdown';
  $('sub').textContent='Saving...';
  const [u1,u2]=await Promise.all([st.upload(path,sBlob,{contentType:'image/jpeg'}),st.upload(path.replace('.jpg','_t.jpg'),sThumb,{contentType:'image/jpeg'})]);
  if(u1.error||u2.error){$('sub').disabled=false;$('sub').textContent=lbl;return toast('Could not save selfie: '+(u1.error||u2.error).message)}
- const {data:r,error}=await sb.from('rentals').insert({selfie_path:path,agent_id:agent.id,bank_id:cur.id,customer_name:name,customer_phone:phone,residence:res,plan_type:c.t,hours:c.h,price:c.p,overdue_rate:c.f,payment_method:pay,start_at:s.toISOString(),end_at:e.toISOString(),tc_accepted:true,tc_accepted_at:s.toISOString()}).select().single();
+ const {data:r,error}=await sb.from('rentals').insert({selfie_path:path,customer_gender:gen,agent_id:agent.id,bank_id:cur.id,customer_name:name,customer_phone:phone,residence:res,plan_type:c.t,hours:c.h,price:c.p,overdue_rate:c.f,payment_method:pay,start_at:s.toISOString(),end_at:e.toISOString(),tc_accepted:true,tc_accepted_at:s.toISOString()}).select().single();
  if(error){$('sub').disabled=false;$('sub').textContent=lbl;return toast(error.message)}
  await sb.from('power_banks').update({status:'rented'}).eq('id',cur.id);scheduleNotifs(r);openRentals()}
 
@@ -323,20 +329,31 @@ async function scheduleNotifs(r){const L=LN();if(!L)return;try{await L.requestPe
  await L.schedule({notifications:n})}catch(e){console.log(e)}}
 async function cancelNotifs(r){const L=LN();if(L)try{await L.cancel({notifications:Array.from({length:13},(_,k)=>({id:nid(r,k)}))})}catch(e){}}
 /* ---------- selfie capture ---------- */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));let sBusy=false;
 const sview=(v,p,i)=>{$('sv').style.display=v?'block':'none';$('sph').style.display=p?'block':'none';$('sp').style.display=i?'block':'none'};
 const sLabel=(t)=>{$('sbtn').innerHTML=ic('camera')+' '+t};
 function selfieStop(){if(sStream)sStream.getTracks().forEach(t=>t.stop());sStream=null}
 function selfieReset(){selfieStop();sBlob=sThumb=null;sview(0,1,0);sLabel('Take selfie')}
-async function selfieBtn(){if(sStream)return selfieSnap();
- try{sStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:720}},audio:false});
-  $('sv').srcObject=sStream;await $('sv').play().catch(()=>{});sBlob=sThumb=null;sview(1,0,0);sLabel('Capture');updPrice()}
- catch(e){toast('Camera error: '+e)}}
-async function selfieSnap(){const v=$('sv'),c=$('sc'),m=Math.min(v.videoWidth,v.videoHeight);if(!m)return toast('Camera not ready yet, try again.');
- c.width=c.height=480;c.getContext('2d').drawImage(v,(v.videoWidth-m)/2,(v.videoHeight-m)/2,m,m,0,0,480,480);
+async function openFront(){await stopScan();await sleep(400);let last;
+ for(let i=0;i<4;i++){
+  for(const c of [{video:{facingMode:{ideal:'user'}},audio:false},{video:true,audio:false}]){
+   try{return await navigator.mediaDevices.getUserMedia(c)}catch(e){last=e;if(e&&e.name==='NotAllowedError')throw e}}
+  await sleep(600)}
+ throw last}
+async function selfieBtn(){if(sBusy)return;if(sStream)return selfieSnap();sBusy=true;sLabel('Opening camera...');
+ try{sStream=await openFront();$('sv').srcObject=sStream;await $('sv').play().catch(()=>{});sBlob=sThumb=null;sview(1,0,0);sLabel('Capture');updPrice()}
+ catch(e){sLabel(sBlob?'Retake selfie':'Take selfie');
+  if(e&&e.name==='NotAllowedError')toast('Camera permission is blocked. Allow Camera for Pawa Plug in your phone Settings > Apps.');
+  else{toast('The live camera could not start, so the phone camera app will open instead. Take the selfie there.');$('sfile').click()}}
+ sBusy=false}
+async function selfieMake(el,w,h){const c=$('sc'),m=Math.min(w,h);c.width=c.height=480;c.getContext('2d').drawImage(el,(w-m)/2,(h-m)/2,m,m,0,0,480,480);
  sBlob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.6));
  const t=document.createElement('canvas');t.width=t.height=96;t.getContext('2d').drawImage(c,0,0,96,96);
  sThumb=await new Promise(r=>t.toBlob(r,'image/jpeg',0.6));
- selfieStop();$('sp').src=URL.createObjectURL(sBlob);sview(0,0,1);sLabel('Retake selfie');updPrice()}
+ $('sp').src=URL.createObjectURL(sBlob);sview(0,0,1);sLabel('Retake selfie');updPrice()}
+async function selfieSnap(){const v=$('sv');if(!v.videoWidth)return toast('Camera not ready yet, try again.');await selfieMake(v,v.videoWidth,v.videoHeight);selfieStop()}
+function selfieFile(inp){const f=inp.files&&inp.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
+ im.onload=async()=>{await selfieMake(im,im.naturalWidth,im.naturalHeight);URL.revokeObjectURL(u)};im.onerror=()=>toast('Could not read that photo.');im.src=u;inp.value=''}
 
 /* ---------- selfie loading (private bucket, signed links, cached) ---------- */
 async function signUrls(paths){const need=paths.filter(x=>!urlCache[x]);if(!need.length)return;
@@ -347,7 +364,7 @@ async function hydrate(){const imgs=[...document.querySelectorAll('img[data-p]:n
 async function openDetail(id){const r=rentals.find(x=>x.id===id);if(!r)return;detailId=id;show('rdetail');
  $('d_name').textContent=r.customer_name;
  const row=(a,b)=>`<div class="row"><span>${a}</span><b>${esc(b)}</b></div>`,dt=x=>new Date(x).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
- $('d_info').innerHTML=row('Phone',r.customer_phone)+row('Residence',r.residence)+row('Power bank',r.power_banks.code)+row('Plan',r.hours+(r.hours>1?' hours':' hour')+' ('+money(r.price)+')')+row('Payment',r.payment_method)+row('Started',dt(r.start_at))+row('Due',dt(r.end_at));
+ $('d_info').innerHTML=row('Phone',r.customer_phone)+(r.customer_gender?row('Gender',r.customer_gender):'')+row('Residence',r.residence)+row('Power bank',r.power_banks.code)+row('Plan',r.hours+(r.hours>1?' hours':' hour')+' ('+money(r.price)+')')+row('Payment',r.payment_method)+row('Started',dt(r.start_at))+row('Due',dt(r.end_at));
  const n=r.customer_phone.replace(/\D/g,''),w=n.startsWith('0')?'265'+n.slice(1):n;
  $('d_call').href='tel:'+r.customer_phone.replace(/[^\d+]/g,'');$('d_wa').href='https://wa.me/'+w;
  const im=$('d_img');im.removeAttribute('src');im.style.display=r.selfie_path?'block':'none';tick();
