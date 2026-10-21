@@ -16,8 +16,10 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - run: npm install
       - run: npx cap add android
-      - name: Full screen (hide status bar, use notch area)
-        run: cp android-overrides/MainActivity.java android/app/src/main/java/com/pawaplug/app/MainActivity.java
+      - name: Edge-to-edge screen and dark window background
+        run: |
+          cp android-overrides/MainActivity.java android/app/src/main/java/com/pawaplug/app/MainActivity.java
+          sed -i 's|<item name="android:background">@null</item>|<item name="android:background">@null</item><item name="android:windowBackground">#0F172A</item>|' android/app/src/main/res/values/styles.xml
       - name: Add permissions
         run: |
           sed -i 's#</manifest>#<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.VIBRATE"/><uses-feature android:name="android.hardware.camera" android:required="false"/></manifest>#' android/app/src/main/AndroidManifest.xml
